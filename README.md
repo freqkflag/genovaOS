@@ -1,6 +1,9 @@
-# Overseer
+# Overseer (genovaOS)
 
 An OS-agnostic homelab control plane that unifies Docker/Compose, Traefik ingress, Cloudflare DNS/Tunnels/Access, and Proxmox into a single secure UI + API with GitOps and automation.
+
+[![CI](https://github.com/freqkflag/genovaOS/actions/workflows/ci.yml/badge.svg)](https://github.com/freqkflag/genovaOS/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🎯 Primary Goal
 
@@ -58,7 +61,25 @@ go build -o overseer-agent ./cmd/agent
 
 - [Product Requirements](./PROJECT-DOCS/PRD.md)
 - [Specification Sheet](./PROJECT-DOCS/spec-sheet.md)
-- [Agent Documentation](./.cursor/AGENTS.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Development Guide](./docs/DEVELOPMENT.md)
+- [Contributing](./CONTRIBUTING.md)
+- [Security Policy](./SECURITY.md)
+- [Changelog](./CHANGELOG.md)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+
+## 🔗 Links
+
+- [GitHub Repository](https://github.com/freqkflag/genovaOS)
+- [Issues](https://github.com/freqkflag/genovaOS/issues)
+- [Discussions](https://github.com/freqkflag/genovaOS/discussions)
 
 ## 🛣️ Roadmap
 
