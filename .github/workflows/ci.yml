@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-api:
+    name: Lint Core API
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: core/api/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+
+  test-api:
+    name: Test Core API
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core/api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: overseer
+          POSTGRES_PASSWORD: overseer
+          POSTGRES_DB: overseer
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: core/api/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm test
+        env:
+          DATABASE_URL: postgresql://overseer:overseer@localhost:5432/overseer
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+
+  lint-web:
+    name: Lint Core Web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: core/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+
+  test-agent:
+    name: Test Agent
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - run: go mod download
+      - run: go test ./...
+      - run: go vet ./...
+      - run: go build -o overseer-agent ./cmd/agent
+
+  build-types:
+    name: Build Types Package
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/types
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: packages/types/package-lock.json
+      - run: npm ci
+      - run: npm run build

@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String   // Hashed
+  role      String   @default("user") // user, admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auditEvents AuditEvent[]
+}
+
+model Node {
+  id          String   @id @default(cuid())
+  name        String
+  hostname    String
+  ipAddress   String?
+  agentToken  String   @unique
+  version     String?
+  status      String   @default("offline") // online, offline
+  lastHeartbeat DateTime?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  apps     App[]
+  jobs     Job[]
+}
+
+model App {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  domain      String?
+  compose     String   // Docker Compose YAML
+  version     Int      @default(1)
+  status      String   @default("stopped") // running, stopped, deploying, error
+  nodeId      String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  node        Node?    @relation(fields: [nodeId], references: [id])
+  routes      Route[]
+  secrets     AppSecret[]
+  versions    AppVersion[]
+  jobs        Job[]
+}
+
+model AppVersion {
+  id        String   @id @default(cuid())
+  appId     String
+  version   Int
+  compose   String
+  createdAt DateTime @default(now())
+
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, version])
+  @@index([appId])
+}
+
+model Route {
+  id          String   @id @default(cuid())
+  appId       String
+  hostname    String
+  path        String   @default("/")
+  target      String   // Service:port
+  tls         Boolean  @default(true)
+  middleware  Json?    // Middleware configuration
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([hostname, path])
+  @@index([appId])
+}
+
+model Secret {
+  id          String   @id @default(cuid())
+  name        String
+  value       String   // Encrypted
+  scope       String   @default("global") // global, app, node
+  scopeId     String?  // App ID or Node ID if scoped
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appSecrets  AppSecret[]
+
+  @@unique([name, scope, scopeId])
+}
+
+model AppSecret {
+  id        String   @id @default(cuid())
+  appId     String
+  secretId  String
+  createdAt DateTime @default(now())
+
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  secret    Secret   @relation(fields: [secretId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, secretId])
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  type        String   // deploy, backup, etc.
+  status      String   @default("pending") // pending, running, completed, failed
+  nodeId      String?
+  appId       String?
+  payload     Json?
+  result      Json?
+  error       String?
+  logs        String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  completedAt DateTime?
+
+  node        Node?    @relation(fields: [nodeId], references: [id])
+  app         App?     @relation(fields: [appId], references: [id])
+
+  @@index([status])
+  @@index([nodeId])
+  @@index([appId])
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String   // create, update, delete, view
+  resource  String   // node, app, secret, etc.
+  resourceId String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+}

@@ -1,0 +1,8 @@
+{
+  "core_url": "http://localhost:3000",
+  "token": "your-agent-token-here",
+  "node_name": "node-1",
+  "heartbeat_interval": "10s",
+  "docker_socket": "/var/run/docker.sock",
+  "log_level": "info"
+}

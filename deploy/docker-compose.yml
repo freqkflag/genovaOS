@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: overseer-postgres
+    environment:
+      POSTGRES_USER: overseer
+      POSTGRES_PASSWORD: overseer
+      POSTGRES_DB: overseer
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U overseer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: overseer-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Core API (to be built)
+  # core-api:
+  #   build:
+  #     context: ../core/api
+  #   environment:
+  #     DATABASE_URL: postgresql://overseer:overseer@postgres:5432/overseer
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+
+  # Core Web (to be built)
+  # core-web:
+  #   build:
+  #     context: ../core/web
+  #   ports:
+  #     - "5173:5173"
+  #   depends_on:
+  #     - core-api
+
+volumes:
+  postgres-data:
+  redis-data:
